@@ -1,0 +1,100 @@
+{% comment %}
+  zip-price-widget.liquid
+  -----------------------
+  How to install:
+  1. In Shopify Admin -> Online Store -> Themes -> Edit code.
+  2. Create a new snippet: snippets/zip-price-widget.liquid and paste this whole file.
+  3. Open sections/main-product.liquid (theme-dependent name) and add this line
+     right after the line that prints the product price, e.g. after
+     {% render 'price', ... %} or wherever {{ product.price | money }} appears:
+
+       {% render 'zip-price-widget', product: product %}
+
+  4. Save. Visit the product page on your storefront.
+
+  IMPORTANT: change BACKEND_URL below to your deployed backend
+  (e.g. https://your-app.onrender.com/api/price)
+{% endcomment %}
+
+<div id="zip-price-widget" style="margin: 16px 0; padding: 14px; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 360px;">
+  <label for="zip-price-input" style="display:block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">
+    Enter ZIP code for shipping price:
+  </label>
+  <div style="display:flex; gap: 8px;">
+    <input
+      type="text"
+      id="zip-price-input"
+      maxlength="5"
+      inputmode="numeric"
+      placeholder="e.g. 75028"
+      style="flex:1; padding:8px; border:1px solid #ccc; border-radius:6px; font-size:14px;"
+    />
+    <button
+      id="zip-price-button"
+      type="button"
+      style="padding:8px 16px; background:#000; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;"
+    >
+      Check Price
+    </button>
+  </div>
+  <div id="zip-price-result" style="margin-top:10px; font-size:15px; font-weight:600;"></div>
+  <div id="zip-price-error" style="margin-top:6px; font-size:13px; color:#c0392b;"></div>
+</div>
+
+<script>
+  (function () {
+    // CHANGE THIS to your deployed backend URL
+    var BACKEND_URL = 'https://YOUR-BACKEND-URL.onrender.com/api/price';
+
+    var productId = {{ product.id | json }};
+    var variantId = {{ product.selected_or_first_available_variant.id | json }};
+
+    var input = document.getElementById('zip-price-input');
+    var button = document.getElementById('zip-price-button');
+    var resultEl = document.getElementById('zip-price-result');
+    var errorEl = document.getElementById('zip-price-error');
+
+    function setLoading(isLoading) {
+      button.disabled = isLoading;
+      button.textContent = isLoading ? 'Checking...' : 'Check Price';
+    }
+
+    button.addEventListener('click', function () {
+      var zip = (input.value || '').trim();
+      resultEl.textContent = '';
+      errorEl.textContent = '';
+
+      if (!/^\d{5}$/.test(zip)) {
+        errorEl.textContent = 'Please enter a valid 5-digit ZIP code.';
+        return;
+      }
+
+      setLoading(true);
+
+      fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zip: zip, productId: productId, variantId: variantId })
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Backend returned an error');
+          return res.json();
+        })
+        .then(function (data) {
+          resultEl.textContent = 'Price for ' + data.zip + ': $' + data.price;
+        })
+        .catch(function (err) {
+          errorEl.textContent = 'Could not fetch price. Please try again.';
+          console.error(err);
+        })
+        .finally(function () {
+          setLoading(false);
+        });
+    });
+
+    // Allow pressing Enter in the input to trigger the check
+    input.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') button.click();
+    });
+  })();
+</script>
