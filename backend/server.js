@@ -1,26 +1,16 @@
-// Shopify ZIP Code Pricing Demo - Backend
-// Run: npm install && npm start
-// Endpoints:
-//   POST /api/price   { zip, productId, variantId }  -> { zip, price, currency, productId }
-//   GET  /health       -> { ok: true }
-
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // allow requests from your Shopify storefront domain
+app.use(cors()); 
 app.use(express.json());
-
-// ---- HARDCODED PRICING RULES (per assignment: prices may be hardcoded) ----
-// Key: ZIP code, Value: price in USD cents (avoid float issues)
 const ZIP_PRICE_RULES = {
-  '75028': 149900, // Flower Mound, TX -> $1,499.00
-  '10001': 169900, // New York, NY     -> $1,699.00
-  '90210': 179900, // Beverly Hills, CA-> $1,799.00
+  '75028': 149900, 
+  '10001': 169900, 
+  '90210': 179900,
 };
 
-// Fallback price if ZIP isn't in our table (so the demo never just errors out)
-const DEFAULT_PRICE = 159900; // $1,599.00
+const DEFAULT_PRICE = 159900; 
 
 function formatUSD(cents) {
   return (cents / 100).toFixed(2);
